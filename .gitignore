@@ -149,5 +149,5 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
-.garden_backend/garden_backend/migrations
+garden_backend/garden_backend/migrations
 garden_backend/garden_backend/app_tokens.py
