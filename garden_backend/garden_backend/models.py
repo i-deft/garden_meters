@@ -21,7 +21,7 @@ class Owner(models.Model):
 
 class Garden(models.Model):
     owner = models.ForeignKey('Owner', on_delete=models.CASCADE, verbose_name='Собственник участка')
-    garden_plot = models.PositiveIntegerField('Номер участка', blank=True)
+    garden_plot = models.PositiveIntegerField('Адрес участка', blank=True)
     is_data_entered_this_month = models.BooleanField('Показатели счетчиков уже переданы в этом месяце')
     is_paid_this_month = models.BooleanField('Оплата уже произведена в данном месяце')
 

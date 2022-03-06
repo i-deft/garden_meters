@@ -1,15 +1,14 @@
-from garden_backend.garden_backend.models import Garden, Owner
+from garden_backend.garden_backend.models import Owner
 import secrets
 import string
-from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
 
-def is_register(phone):
+def is_register(login):
     try:
-        User.objects.get(username=phone)
+        User.objects.get(username=login)
         return True
     except Exception:
         return False

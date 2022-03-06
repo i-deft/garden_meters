@@ -8,7 +8,7 @@ import telebot
 from garden_backend.garden_backend.settings import BOT_TOKEN
 from telebot import types
 from garden_backend.garden_backend.garden_bot.user_functions import is_register, register, find_user
-
+from garden_backend.garden_backend.garden_bot.garden_functions import gardens_meters
 
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -59,7 +59,8 @@ def contact(message):
                 bot.send_message(message.chat.id,
                                  'Такой номер уже зарегистрирован, если Вы забыли пароль - обратитесь к администратору')
         except Exception:
-            bot.send_message(message.chat.id, 'Попробуйте ещё раз отправить номер телефона или обратитесь к администратору')
+            bot.send_message(message.chat.id,
+                             'Попробуйте ещё раз отправить номер телефона или обратитесь к администратору')
 
 
 def check_login_to_meters(message):
@@ -76,20 +77,25 @@ def check_password_to_meters(message, login):
     user = find_user(username=login)
     if user.check_password(raw_password=message.text):
         msg = bot.send_message(message.chat.id, 'Пожалуйста введите показания')
-        bot.register_next_step_handler(msg, enter_meters)
+        bot.register_next_step_handler(msg, enter_meters, login)
     else:
-        bot.send_message(message.chat.id, 'Введена некорректная пара логин/пароль. Для того, чтобы попробовать снова введите любой текст')
+        bot.send_message(message.chat.id,
+                         'Введена некорректная пара логин/пароль. Для того, чтобы попробовать снова введите любой текст')
+
+# доделать
+def enter_meters(message, login):
+    meters = gardens_meters(login)
+    info = ""
+    for garden_plot, last_meters in meters.items():
+        info += f'Участок - {garden_plot}, предыдущие показания {last_meters[0]}, были получены {last_meters[1]}\n\n'
+
+    msg = bot.send_message(message.chat.id,
+                     info)
 
 
-def enter_meters(message):
-    bot.send_message(message.chat.id,
-                     'ок')
 
 def send_notification(chat_id, text):
     bot.send_message(chat_id, text)
 
 
-
-
 bot.polling(none_stop=True)
-
