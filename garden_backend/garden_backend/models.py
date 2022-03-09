@@ -21,10 +21,8 @@ class Owner(models.Model):
 
 class Garden(models.Model):
     owner = models.ForeignKey('Owner', on_delete=models.CASCADE, verbose_name='Собственник участка')
-    garden_plot = models.PositiveIntegerField('Адрес участка', blank=True)
+    garden_plot = models.TextField('Адрес участка', blank=True)
     is_data_entered_this_month = models.BooleanField('Показатели счетчиков уже переданы в этом месяце')
-    is_paid_this_month = models.BooleanField('Оплата уже произведена в данном месяце')
-
     class Meta:
         verbose_name = 'Данные по участку'
         verbose_name_plural = 'Данные по участкам'
@@ -34,9 +32,9 @@ class Garden(models.Model):
 
 
 class MonthMeters(models.Model):
-    title = models.ForeignKey('Garden', on_delete=models.CASCADE, verbose_name='Участок в собственности')
+    garden = models.ForeignKey('Garden', on_delete=models.CASCADE, verbose_name='Участок в собственности')
     meters = models.PositiveIntegerField('Показания счетчиков')
-    time = models.DateTimeField()
+    time = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = 'Данные по ежемесячным показателям'

@@ -8,8 +8,8 @@ import telebot
 from garden_backend.garden_backend.settings import BOT_TOKEN
 from telebot import types
 from garden_backend.garden_backend.garden_bot.user_functions import is_register, register, find_user
-from garden_backend.garden_backend.garden_bot.garden_functions import gardens_meters
-
+from garden_backend.garden_backend.garden_bot.garden_functions import gardens_meters, garden_is_exist, register_garden, \
+    garden_plots, delete_garden
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -24,7 +24,7 @@ def any_msg(message):
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'registration')
-def phone(call):
+def registration(call):
     keyboard = types.ReplyKeyboardMarkup(row_width=1)
     button_phone = types.KeyboardButton(text="Отправить телефон", request_contact=True)
     keyboard.add(button_phone)
@@ -36,14 +36,13 @@ def phone(call):
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'meters')
-def phone(call):
+def meters(call):
     msg = bot.send_message(call.message.chat.id, 'Пожалуйста введите свой логин')
     bot.register_next_step_handler(msg, check_login_to_meters)
 
 
 @bot.message_handler(content_types=['contact'])
 def contact(message):
-    print(message)
     if message.contact is not None:
         phone = message.contact.phone_number
         chat_id = message.chat.id
@@ -76,22 +75,81 @@ def check_login_to_meters(message):
 def check_password_to_meters(message, login):
     user = find_user(username=login)
     if user.check_password(raw_password=message.text):
-        msg = bot.send_message(message.chat.id, 'Пожалуйста введите показания')
-        bot.register_next_step_handler(msg, enter_meters, login)
+        check_meters_and_gardens(message, login)
     else:
         bot.send_message(message.chat.id,
                          'Введена некорректная пара логин/пароль. Для того, чтобы попробовать снова введите любой текст')
 
-# доделать
-def enter_meters(message, login):
-    meters = gardens_meters(login)
-    info = ""
-    for garden_plot, last_meters in meters.items():
-        info += f'Участок - {garden_plot}, предыдущие показания {last_meters[0]}, были получены {last_meters[1]}\n\n'
 
-    msg = bot.send_message(message.chat.id,
-                     info)
+def check_meters_and_gardens(message, login):
+    if garden_is_exist(login):
+        previous_meters = gardens_meters(login)
+        garden_plots_set = garden_plots(login)
+        info = ""
+        for garden_plot, last_meters in previous_meters.items():
+            info += f'Участок - {garden_plot}, предыдущие показания {last_meters[0]}, были получены {last_meters[1]}\n\n'
+        if len(garden_plots_set) > 1:
+            info += 'Показания для какого участка вы хотите добавить?'
+            for number, garden in garden_plots_set.items():
+                info += f'{number}: {garden}\n'
+            info += 'Пожалуйста укажите цифру\n'
 
+        msg = bot.send_message(message.chat.id, info)
+        bot.register_next_step_handler(msg, enter_meters, login)
+
+    else:
+        keyboardmain = types.InlineKeyboardMarkup(row_width=1)
+        data = "garden_registration" + "|" + login
+        garden_registration_button = types.InlineKeyboardButton(text="Добавить участок", callback_data=data)
+        keyboardmain.add(garden_registration_button)
+        bot.send_message(message.chat.id, 'Связанный участок не найден. Пожалуйста, добавьте участок',
+                         reply_markup=keyboardmain)
+
+
+@bot.callback_query_handler(func=lambda call: 'garden_registration' in call.data)
+def gardens(call):
+    try:
+        login = call.data.split('|')[1]
+        msg = bot.send_message(call.message.chat.id, 'Пожалуйста, введите адрес участка')
+        bot.register_next_step_handler(msg, garden_registration, login)
+    except Exception:
+        bot.send_message(call.message.chat.id, 'Что-то пошло не так. Пожалуйста попробуйте позже')
+
+
+def enter_meters(login):
+    pass
+
+
+def garden_registration(message, login):
+    saved_garden = register_garden(login, adress=message.text)
+    if saved_garden:
+        adress = saved_garden[0]
+        id = saved_garden[1]
+        confirmation_request = f'Вы добавили адрес участка: {adress}. Желаете сохранить?'
+        keyboardmain = types.InlineKeyboardMarkup(row_width=2)
+        garden_registration_confirm_button = types.InlineKeyboardButton(text="Да", callback_data="garden_save_confirm")
+        data_to_decline = "garden_save_decline" + "|" + str(id)
+        garden_registration_decline_button = types.InlineKeyboardButton(text="Нет", callback_data=data_to_decline)
+        keyboardmain.add(garden_registration_confirm_button, garden_registration_decline_button)
+        bot.send_message(message.chat.id, confirmation_request, reply_markup=keyboardmain)
+    else:
+        bot.send_message(message.chat.id, 'Что-то пошло не так, попробуйте ещё раз позже')
+
+
+@bot.callback_query_handler(func=lambda call: call.data == 'garden_save_confirm')
+def confirm_save_garden(call):
+    bot.send_message(call.message.chat.id, 'Участок сохранен. Для начала ввода показаний введите любой текст - вы начнете с главного меню')
+
+
+@bot.callback_query_handler(func=lambda call: 'garden_save_decline' in call.data)
+def decline_save_garden(call):
+    try:
+        id = call.data.split('|')[1]
+        delete_garden(id)
+        bot.send_message(call.message.chat.id, 'Участок удален')
+
+    except Exception:
+        bot.send_message(call.message.chat.id, 'Что-то пошло не так. Пожалуйста попробуйте позже')
 
 
 def send_notification(chat_id, text):
