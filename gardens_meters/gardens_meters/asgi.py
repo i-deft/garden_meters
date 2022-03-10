@@ -1,5 +1,5 @@
 """
-ASGI config for garden_backend project.
+ASGI config for gardens_meters project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'garden_backend.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gardens_meters.settings')
 
 application = get_asgi_application()

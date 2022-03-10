@@ -1,10 +1,10 @@
 import os
 import django
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'garden_backend.garden_backend.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gardens_meters.gardens_meters.settings')
 django.setup()
 
-from garden_backend.garden_backend.models import Garden, MonthMeters
+from gardens_meters.gardens_meters.models import Garden, MonthMeters
 from django.contrib.auth import get_user_model
 
 User = get_user_model()

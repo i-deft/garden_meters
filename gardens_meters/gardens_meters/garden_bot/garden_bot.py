@@ -1,14 +1,14 @@
 import os
 import django
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'garden_backend.garden_backend.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gardens_meters.gardens_meters.settings')
 django.setup()
 
 import telebot
-from garden_backend.garden_backend.settings import BOT_TOKEN
+from gardens_meters.gardens_meters.settings import BOT_TOKEN
 from telebot import types
-from garden_backend.garden_backend.garden_bot.user_functions import is_register, register, find_user
-from garden_backend.garden_backend.garden_bot.garden_functions import gardens_meters, garden_is_exist, register_garden, \
+from gardens_meters.gardens_meters.garden_bot.user_functions import is_register, register, find_user
+from gardens_meters.gardens_meters.garden_bot.garden_functions import gardens_meters, garden_is_exist, register_garden, \
     garden_plots, delete_garden
 
 bot = telebot.TeleBot(BOT_TOKEN)

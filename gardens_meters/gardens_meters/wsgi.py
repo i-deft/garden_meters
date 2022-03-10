@@ -1,5 +1,5 @@
 """
-WSGI config for garden_backend project.
+WSGI config for gardens_meters project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'garden_backend.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gardens_meters.settings')
 
 application = get_wsgi_application()

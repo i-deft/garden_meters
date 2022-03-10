@@ -1,4 +1,4 @@
-from garden_backend.garden_backend.models import Owner
+from gardens_meters.gardens_meters.models import Owner
 import secrets
 import string
 from django.contrib.auth import get_user_model

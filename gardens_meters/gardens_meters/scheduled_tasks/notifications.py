@@ -2,7 +2,7 @@ import os
 import django
 
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'garden_backend.garden_backend.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gardens_meters.gardens_meters.settings')
 django.setup()
 
 

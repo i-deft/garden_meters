@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 class Garden_backendConfig(AppConfig):
-    name = 'garden_backend'
+    name = 'gardens_meters'
     def ready(self):
-        import garden_backend.signals
+        import gardens_meters.signals

@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('garden_backend', '0001_initial'),
+        ('gardens_meters', '0001_initial'),
     ]
 
     operations = [

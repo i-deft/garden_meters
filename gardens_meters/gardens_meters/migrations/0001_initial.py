@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('photo', models.FileField(blank=True, upload_to='photos/%Y/%m/%d/', verbose_name='Фотография счетчика')),
-                ('title', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='garden_backend.garden', verbose_name='Участок в собственности')),
+                ('title', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='gardens_meters.garden', verbose_name='Участок в собственности')),
             ],
             options={
                 'verbose_name': 'Фото оплаты',
@@ -59,7 +59,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('meters', models.PositiveIntegerField(verbose_name='Показания счетчиков')),
                 ('time', models.DateTimeField()),
-                ('title', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='garden_backend.garden', verbose_name='Участок в собственности')),
+                ('title', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='gardens_meters.garden', verbose_name='Участок в собственности')),
             ],
             options={
                 'verbose_name': 'Данные по ежемесячным показателям',
@@ -69,6 +69,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='garden',
             name='owner',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='garden_backend.owner', verbose_name='Собственник участка'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='gardens_meters.owner', verbose_name='Собственник участка'),
         ),
     ]
