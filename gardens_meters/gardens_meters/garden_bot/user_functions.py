@@ -26,9 +26,9 @@ def register(phone, chat_id):
     return {'login': phone, 'password': password}
 
 
-def find_user(username):
+def find_user(login):
     try:
-        user = User.objects.get(username=username)
+        user = User.objects.get(username=login)
         return user
-    except:
+    except Exception:
         return False

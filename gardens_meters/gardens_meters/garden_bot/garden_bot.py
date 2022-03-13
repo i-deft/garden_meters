@@ -8,7 +8,7 @@ import telebot
 from gardens_meters.gardens_meters.settings import BOT_TOKEN
 from telebot import types
 from gardens_meters.gardens_meters.garden_bot.user_functions import is_register, register, find_user
-from gardens_meters.gardens_meters.garden_bot.garden_functions import gardens_meters, garden_is_exist, register_garden, \
+from gardens_meters.gardens_meters.garden_bot.garden_functions import garden_preivous_meters, garden_is_exist, register_garden, \
     garden_plots, delete_garden
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -47,8 +47,7 @@ def contact(message):
         phone = message.contact.phone_number
         chat_id = message.chat.id
         try:
-            registered_phone = is_register(phone)
-            if not registered_phone:
+            if not is_register(phone):
                 result = register(phone, chat_id)
                 login = result['login']
                 password = result['password']
@@ -64,7 +63,7 @@ def contact(message):
 
 def check_login_to_meters(message):
     login = message.text
-    user = find_user(username=message.text)
+    user = is_register(login=message.text)
     if user:
         msg = bot.send_message(message.chat.id, 'Пожалуйста введите пароль')
         bot.register_next_step_handler(msg, check_password_to_meters, login)
@@ -73,7 +72,7 @@ def check_login_to_meters(message):
 
 
 def check_password_to_meters(message, login):
-    user = find_user(username=login)
+    user = find_user(login=login)
     if user.check_password(raw_password=message.text):
         check_meters_and_gardens(message, login)
     else:
@@ -83,19 +82,27 @@ def check_password_to_meters(message, login):
 
 def check_meters_and_gardens(message, login):
     if garden_is_exist(login):
-        previous_meters = gardens_meters(login)
         garden_plots_set = garden_plots(login)
-        info = ""
-        for garden_plot, last_meters in previous_meters.items():
-            info += f'Участок - {garden_plot}, предыдущие показания {last_meters[0]}, были получены {last_meters[1]}\n\n'
         if len(garden_plots_set) > 1:
-            info += 'Показания для какого участка вы хотите добавить?'
-            for number, garden in garden_plots_set.items():
-                info += f'{number}: {garden}\n'
-            info += 'Пожалуйста укажите цифру\n'
+            garden_choice = 'Показания для какого участка вы хотите добавить?'
+            keyboardmain = types.InlineKeyboardMarkup(row_width=1)
+            for garden_id, garden in garden_plots_set.items():
+                callback_data = 'garden_id_to_meters|' + login + '|' + str(garden_id)
+                button = types.InlineKeyboardButton(text=garden,
+                                                    callback_data=callback_data)
+                keyboardmain.add(button)
+            bot.send_message(message.chat.id, garden_choice, reply_markup=keyboardmain)
 
-        msg = bot.send_message(message.chat.id, info)
-        bot.register_next_step_handler(msg, enter_meters, login)
+        else:
+            garden_choice = 'Пожалуйста, нажмите на участок и следуйте инструкциям далее'
+            keyboardmain = types.InlineKeyboardMarkup(row_width=1)
+            for garden_id, garden in garden_plots_set.items():
+                callback_data = 'garden_id_to_meters|' + login + '|' + str(garden_id)
+                button = types.InlineKeyboardButton(text=garden,
+                                                    callback_data=callback_data)
+                keyboardmain.add(button)
+                callback_data = 'garden_id|' + login + '|' + str(garden_id)
+            bot.send_message(message.chat.id, garden_choice, reply_markup=keyboardmain)
 
     else:
         keyboardmain = types.InlineKeyboardMarkup(row_width=1)
@@ -116,9 +123,24 @@ def gardens(call):
         bot.send_message(call.message.chat.id, 'Что-то пошло не так. Пожалуйста попробуйте позже')
 
 
-def enter_meters(login):
-    pass
+@bot.callback_query_handler(func=lambda call: 'garden_id_to_meters' in call.data)
+def prepare_to_enter_meters(call):
+    try:
+        data = call.data.split('|')
+        login = data[1]
+        garden_id = data[2]
+        previous_meters = garden_preivous_meters(login, garden_id)
+        info = ""
+        for garden_plot, last_meters in previous_meters.items():
+            info += f'Предыдущие показания для этого участка -  {last_meters[0]}, были получены {last_meters[1]}\n\n'
+        bot.send_message(call.message.chat.id, info)
+        # msg = (call.message.chat.id, 'Пожалуйста, введите показания')
+        # bot.register_next_step_handler(msg, enter_meters, garden_id, login)
+    except Exception:
+        bot.send_message(call.message.chat.id, 'Что-то пошло не так. Пожалуйста попробуйте позже')
 
+def enter_meters(message):
+    pass
 
 def garden_registration(message, login):
     saved_garden = register_garden(login, adress=message.text)

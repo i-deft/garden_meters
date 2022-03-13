@@ -20,25 +20,23 @@ def garden_is_exist(login):
         return False
 
 def garden_plots(login):
-    num = 1
     user = User.objects.get(username=login)
     owner = user.owner
     gardens = owner.garden_set.all()
     gardens_set = {}
     for garden in gardens:
-        gardens_set[num] = garden.garden_plot
+        gardens_set[garden.id] = garden.garden_plot
     return gardens_set
 
 
-def gardens_meters(login):
+def garden_preivous_meters(login, garden_id):
     user = User.objects.get(username=login)
     owner = user.owner
-    gardens = owner.garden_set.all()
+    garden = owner.garden_set.get(id=int(garden_id))
     meters = {}
-    for garden in gardens:
-        last_meters = garden.monthmeters_set.last()
-        meters[garden.garden_plot] = (last_meters.meters, last_meters.time.strftime("%d.%m.%Y"))
-        return meters
+    last_meters = garden.monthmeters_set.last()
+    meters[garden.garden_plot] = (last_meters.meters, last_meters.time.strftime("%d.%m.%Y"))
+    return meters
 
 
 def register_garden(login, adress):
@@ -60,3 +58,7 @@ def delete_garden(id):
     id = int(id)
     garden = Garden.objects.get(id=id)
     garden.delete()
+
+def enter_meters(garden_plot, current_meters):
+    pass
+
