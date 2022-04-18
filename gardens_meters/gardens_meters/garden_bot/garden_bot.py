@@ -16,10 +16,13 @@ bot = telebot.TeleBot(BOT_TOKEN)
 
 @bot.message_handler(content_types=["text"])
 def any_msg(message):
-    keyboardmain = types.InlineKeyboardMarkup(row_width=2)
-    registration_button = types.InlineKeyboardButton(text="Зарегистрироваться", callback_data="registration")
+    keyboardmain = types.InlineKeyboardMarkup(row_width=1)
+    if not is_register(chat_id=message.chat.id):
+        registration_button = types.InlineKeyboardButton(text="Зарегистрироваться", callback_data="registration")
+        keyboardmain.add(registration_button)
     meters_button = types.InlineKeyboardButton(text="Ввести показания", callback_data="meters")
-    keyboardmain.add(registration_button, meters_button)
+    garden_registration = types.InlineKeyboardButton(text="Зарегистрировать участок", callback_data="garden_registration")
+    keyboardmain.add(meters_button, garden_registration)
     bot.send_message(message.chat.id, 'Добрый день! Выберите действие', reply_markup=keyboardmain)
 
 
@@ -30,15 +33,8 @@ def registration(call):
     keyboard.add(button_phone)
     bot.send_message(call.message.chat.id,
                      'Пожалуйста, отправьте свой номер через кнопку ниже'
-                     '\n\n Если вы уже зарегистрированы, то отправлять контакт не нужно. '
                      '\n\n Для возврата в основное меню введите любой текст',
                      reply_markup=keyboard)
-
-
-@bot.callback_query_handler(func=lambda call: call.data == 'meters')
-def meters(call):
-    msg = bot.send_message(call.message.chat.id, 'Пожалуйста введите свой логин')
-    bot.register_next_step_handler(msg, check_login_to_meters)
 
 
 @bot.message_handler(content_types=['contact'])
@@ -51,8 +47,12 @@ def contact(message):
                 result = register(phone, chat_id)
                 login = result['login']
                 password = result['password']
-                bot.send_message(message.chat.id,
-                                 f'Ваш логин - {login}, пароль - {password}.\n\n Пожалуйста, запомните или запишите их, они будут использоваться для передачи показаний')
+
+                bot.send_message(message.chat.id, 'Ваш логин:')
+                bot.send_message(message.chat.id, login)
+                bot.send_message(message.chat.id, 'Ваш пароль:')
+                bot.send_message(message.chat.id, password + '\n\n')
+                bot.send_message(message.chat.id, 'Пожалуйста, запомните или запишите их, они будут использоваться для передачи показаний')
             else:
                 bot.send_message(message.chat.id,
                                  'Такой номер уже зарегистрирован, если Вы забыли пароль - обратитесь к администратору')
@@ -61,33 +61,21 @@ def contact(message):
                              'Попробуйте ещё раз отправить номер телефона или обратитесь к администратору')
 
 
-def check_login_to_meters(message):
-    login = message.text
-    user = is_register(login=message.text)
-    if user:
-        msg = bot.send_message(message.chat.id, 'Пожалуйста введите пароль')
-        bot.register_next_step_handler(msg, check_password_to_meters, login)
-    else:
-        bot.send_message(message.chat.id, 'Такой логин не найден, пожалуйста начните сначала вводом любого текста')
+@bot.callback_query_handler(func=lambda call: call.data == 'meters')
+def meters(call):
+    msg = bot.send_message(call.message.chat.id, 'Пожалуйста выберите участок')
+    chat_id = call.message.chat.id
+    bot.register_next_step_handler(msg, check_meters_and_gardens, chat_id)
 
 
-def check_password_to_meters(message, login):
-    user = find_user(login=login)
-    if user.check_password(raw_password=message.text):
-        check_meters_and_gardens(message, login)
-    else:
-        bot.send_message(message.chat.id,
-                         'Введена некорректная пара логин/пароль. Для того, чтобы попробовать снова введите любой текст')
-
-
-def check_meters_and_gardens(message, login):
-    if garden_is_exist(login):
-        garden_plots_set = garden_plots(login)
+def check_meters_and_gardens(message, chat_id):
+    if garden_is_exist(chat_id):
+        garden_plots_set = garden_plots(chat_id)
         if len(garden_plots_set) > 1:
             garden_choice = 'Показания для какого участка вы хотите добавить?'
             keyboardmain = types.InlineKeyboardMarkup(row_width=1)
             for garden_id, garden in garden_plots_set.items():
-                callback_data = 'garden_id_to_meters|' + login + '|' + str(garden_id)
+                callback_data = 'garden_id_to_meters|'+ '|'  + str(garden_id)
                 button = types.InlineKeyboardButton(text=garden,
                                                     callback_data=callback_data)
                 keyboardmain.add(button)
@@ -97,16 +85,16 @@ def check_meters_and_gardens(message, login):
             garden_choice = 'Пожалуйста, нажмите на участок и следуйте инструкциям далее'
             keyboardmain = types.InlineKeyboardMarkup(row_width=1)
             for garden_id, garden in garden_plots_set.items():
-                callback_data = 'garden_id_to_meters|' + login + '|' + str(garden_id)
+                callback_data = 'garden_id_to_meters|' + '|' + str(garden_id)
                 button = types.InlineKeyboardButton(text=garden,
                                                     callback_data=callback_data)
                 keyboardmain.add(button)
-                callback_data = 'garden_id|' + login + '|' + str(garden_id)
+
             bot.send_message(message.chat.id, garden_choice, reply_markup=keyboardmain)
 
     else:
         keyboardmain = types.InlineKeyboardMarkup(row_width=1)
-        data = "garden_registration" + "|" + login
+        data = "garden_registration"
         garden_registration_button = types.InlineKeyboardButton(text="Добавить участок", callback_data=data)
         keyboardmain.add(garden_registration_button)
         bot.send_message(message.chat.id, 'Связанный участок не найден. Пожалуйста, добавьте участок',
@@ -116,9 +104,9 @@ def check_meters_and_gardens(message, login):
 @bot.callback_query_handler(func=lambda call: 'garden_registration' in call.data)
 def gardens(call):
     try:
-        login = call.data.split('|')[1]
+        chat_id = call.message.chat.id
         msg = bot.send_message(call.message.chat.id, 'Пожалуйста, введите адрес участка')
-        bot.register_next_step_handler(msg, garden_registration, login)
+        bot.register_next_step_handler(msg, garden_registration, chat_id)
     except Exception:
         bot.send_message(call.message.chat.id, 'Что-то пошло не так. Пожалуйста попробуйте позже')
 
@@ -127,9 +115,8 @@ def gardens(call):
 def prepare_to_enter_meters(call):
     try:
         data = call.data.split('|')
-        login = data[1]
         garden_id = data[2]
-        previous_meters = garden_preivous_meters(login, garden_id)
+        previous_meters = garden_preivous_meters(call.message.chat.id, garden_id)
         info = ""
         for garden_plot, last_meters in previous_meters.items():
             info += f'Предыдущие показания для этого участка -  {last_meters[0]}, были получены {last_meters[1]}\n\n'
@@ -142,8 +129,8 @@ def prepare_to_enter_meters(call):
 def enter_meters(message):
     pass
 
-def garden_registration(message, login):
-    saved_garden = register_garden(login, adress=message.text)
+def garden_registration(message):
+    saved_garden = register_garden(message.chat.id, adress=message.text)
     if saved_garden:
         adress = saved_garden[0]
         id = saved_garden[1]
@@ -176,6 +163,29 @@ def decline_save_garden(call):
 
 def send_notification(chat_id, text):
     bot.send_message(chat_id, text)
+
+
+
+
+
+
+def check_login_to_meters(message):
+    login = message.text
+    user = is_register(login=message.text)
+    if user:
+        msg = bot.send_message(message.chat.id, 'Пожалуйста введите пароль')
+        bot.register_next_step_handler(msg, check_password_to_meters, login)
+    else:
+        bot.send_message(message.chat.id, 'Такой логин не найден, пожалуйста начните сначала вводом любого текста')
+
+
+def check_password_to_meters(message, login):
+    user = find_user(login=login)
+    if user.check_password(raw_password=message.text):
+        check_meters_and_gardens(message, login)
+    else:
+        bot.send_message(message.chat.id,
+                         'Введена некорректная пара логин/пароль. Для того, чтобы попробовать снова введите любой текст')
 
 
 bot.polling(none_stop=True)

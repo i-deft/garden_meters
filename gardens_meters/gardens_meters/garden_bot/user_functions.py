@@ -6,10 +6,14 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
-def is_register(login):
+def is_register(login=None, chat_id=None):
     try:
-        User.objects.get(username=login)
-        return True
+        if login:
+            User.objects.get(username=login)
+            return True
+        else:
+            Owner.objects.get(chat_id=chat_id)
+            return True
     except Exception:
         return False
 
