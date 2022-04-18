@@ -63,9 +63,9 @@ def contact(message):
 
 @bot.callback_query_handler(func=lambda call: call.data == 'meters')
 def meters(call):
-    msg = bot.send_message(call.message.chat.id, 'Пожалуйста выберите участок')
+    message = call.message
     chat_id = call.message.chat.id
-    bot.register_next_step_handler(msg, check_meters_and_gardens, chat_id)
+    check_meters_and_gardens(message, chat_id)
 
 
 def check_meters_and_gardens(message, chat_id):
@@ -121,8 +121,8 @@ def prepare_to_enter_meters(call):
         for garden_plot, last_meters in previous_meters.items():
             info += f'Предыдущие показания для этого участка -  {last_meters[0]}, были получены {last_meters[1]}\n\n'
         bot.send_message(call.message.chat.id, info)
-        # msg = (call.message.chat.id, 'Пожалуйста, введите показания')
-        # bot.register_next_step_handler(msg, enter_meters, garden_id, login)
+        msg = (call.message.chat.id, 'Пожалуйста, введите показания')
+        bot.register_next_step_handler(msg, enter_meters, garden_id)
     except Exception:
         bot.send_message(call.message.chat.id, 'Что-то пошло не так. Пожалуйста попробуйте позже')
 
