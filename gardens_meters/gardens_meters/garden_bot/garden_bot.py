@@ -9,7 +9,7 @@ from gardens_meters.gardens_meters.settings import BOT_TOKEN
 from telebot import types
 from gardens_meters.gardens_meters.garden_bot.user_functions import is_register, register, find_user
 from gardens_meters.gardens_meters.garden_bot.garden_functions import garden_preivous_meters, garden_is_exist, register_garden, \
-    garden_plots, delete_garden
+    garden_plots, delete_garden, enter_meters
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -104,9 +104,8 @@ def check_meters_and_gardens(message, chat_id):
 @bot.callback_query_handler(func=lambda call: 'garden_registration' in call.data)
 def gardens(call):
     try:
-        chat_id = call.message.chat.id
         msg = bot.send_message(call.message.chat.id, 'Пожалуйста, введите адрес участка')
-        bot.register_next_step_handler(msg, garden_registration, chat_id)
+        bot.register_next_step_handler(msg, garden_registration)
     except Exception:
         bot.send_message(call.message.chat.id, 'Что-то пошло не так. Пожалуйста попробуйте позже')
 
@@ -118,16 +117,21 @@ def prepare_to_enter_meters(call):
         garden_id = data[2]
         previous_meters = garden_preivous_meters(call.message.chat.id, garden_id)
         info = ""
+        last_meter = ""
         for garden_plot, last_meters in previous_meters.items():
             info += f'Предыдущие показания для этого участка -  {last_meters[0]}, были получены {last_meters[1]}\n\n'
+            last_meter = last_meters[0]
         bot.send_message(call.message.chat.id, info)
-        msg = (call.message.chat.id, 'Пожалуйста, введите показания')
-        bot.register_next_step_handler(msg, enter_meters, garden_id)
+        msg = bot.send_message(call.message.chat.id, 'Пожалуйста, введите показания')
+        bot.register_next_step_handler(msg, take_meters, garden_id, last_meter)
     except Exception:
         bot.send_message(call.message.chat.id, 'Что-то пошло не так. Пожалуйста попробуйте позже')
 
-def enter_meters(message):
-    pass
+def take_meters(message, garden_id, last_meters):
+    current_meters = message.text
+    entered_meters = enter_meters(current_meters, garden_id, last_meters)
+    bot.send_message(message.chat.id, entered_meters)
+
 
 def garden_registration(message):
     saved_garden = register_garden(message.chat.id, adress=message.text)
@@ -142,7 +146,7 @@ def garden_registration(message):
         keyboardmain.add(garden_registration_confirm_button, garden_registration_decline_button)
         bot.send_message(message.chat.id, confirmation_request, reply_markup=keyboardmain)
     else:
-        bot.send_message(message.chat.id, 'Что-то пошло не так, попробуйте ещё раз позже')
+        bot.send_message(message.chat.id, saved_garden)
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'garden_save_confirm')
